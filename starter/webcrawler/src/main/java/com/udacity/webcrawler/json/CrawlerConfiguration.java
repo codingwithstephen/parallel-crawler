@@ -1,5 +1,8 @@
 package com.udacity.webcrawler.json;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,6 +14,7 @@ import java.util.stream.Collectors;
 /**
  * A data class that represents the configuration of a single web crawl.
  */
+@JsonDeserialize(builder = CrawlerConfiguration.Builder.class)
 public final class CrawlerConfiguration {
 
   private final List<String> startPages;
@@ -174,157 +178,106 @@ public final class CrawlerConfiguration {
    * A builder class to create {@link CrawlerConfiguration} instances.
    */
   public static final class Builder {
-    private final Set<String> startPages = new LinkedHashSet<>();
-    private final Set<String> ignoredUrls = new LinkedHashSet<>();
-    private final Set<String> ignoredWords = new LinkedHashSet<>();
-    private int parallelism = -1;
-    private String implementationOverride = "";
-    private int maxDepth = 0;
-    private int timeoutSeconds = 1;
-    private int popularWordCount = 0;
-    private String profileOutputPath = "";
-    private String resultPath = "";
+      private final Set<String> startPages = new LinkedHashSet<>();
+      private final Set<String> ignoredUrls = new LinkedHashSet<>();
+      private final Set<String> ignoredWords = new LinkedHashSet<>();
+      private int parallelism = -1;
+      private String implementationOverride = "";
+      private int maxDepth = 0;
+      private int timeoutSeconds = 1;
+      private int popularWordCount = 0;
+      private String profileOutputPath = "";
+      private String resultPath = "";
 
-    /**
-     * Adds a start page URL.
-     *
-     * <p>Does nothing if the given page has already been added. See {@link #getStartPages()}.
-     */
-    public Builder addStartPages(String... startPages) {
-      for (String startPage : startPages) {
-        this.startPages.add(Objects.requireNonNull(startPage));
-      }
-      return this;
-    }
-
-    /**
-     * Adds a regular expression pattern that defines URLs to ignore during the crawl.
-     *
-     * <p>Does nothing if the same pattern has already been added. See {@link #getIgnoredUrls()}.
-     *
-     * @param patterns one or more regular expressions that define a valid {@link Pattern}.
-     */
-    public Builder addIgnoredUrls(String... patterns) {
-      for (String pattern : patterns) {
-        ignoredUrls.add(Objects.requireNonNull(pattern));
-      }
-      return this;
-    }
-
-    /**
-     * Adds a regular expression pattern that defines words to ignore when computing the popular
-     * counts.
-     *
-     * <p>Does nothing if the same pattern has already been added. See {@link #getIgnoredWords()}.
-     *
-     * <p>See {@link com.udacity.webcrawler.json.CrawlResult#getWordCounts()} for more information
-     * about the popular word computation.
-     *
-     * @param patterns one or more regular expressions that define a valid {@link Pattern}.
-     */
-    public Builder addIgnoredWords(String... patterns) {
-      for (String pattern : patterns) {
-        ignoredWords.add(Objects.requireNonNull(pattern));
-      }
-      return this;
-    }
-
-    /**
-     * Sets the desired parallelism of the crawl.
-     *
-     * <p>See {@link #getParallelism()}.
-     */
-    public Builder setParallelism(int parallelism) {
-      this.parallelism = parallelism;
-      return this;
-    }
-
-    /**
-     * Overrides the {@link com.udacity.webcrawler.WebCrawler} implementation that should be used
-     * for the crawl.
-     *
-     * <p>See {@link #getImplementationOverride()}.
-     */
-    public Builder setImplementationOverride(String implementationOverride) {
-      this.implementationOverride = Objects.requireNonNull(implementationOverride);
-      return this;
-    }
-
-    /**
-     * Sets the maximum depth of the crawl.
-     *
-     * <p>See {@link #getMaxDepth()}.
-     */
-    public Builder setMaxDepth(int maxDepth) {
-      this.maxDepth = maxDepth;
-      return this;
-    }
-
-    /**
-     * Sets the maximum amount of time allowed for the crawl, specified in seconds.
-     *
-     * <p>See {@link #getTimeout()}.
-     */
-    public Builder setTimeoutSeconds(int seconds) {
-      this.timeoutSeconds = seconds;
-      return this;
-    }
-
-    /**
-     * Sets the number of most popular words that should be reported by the crawl.
-     *
-     * <p>See {@link #getPopularWordCount()}.
-     */
-    public Builder setPopularWordCount(int popularWordCount) {
-      this.popularWordCount = popularWordCount;
-      return this;
-    }
-
-    /**
-     * Sets the path to the file where profiling data for this crawl should be written.
-     *
-     * <p>See {@link #getProfileOutputPath()}.
-     */
-    public Builder setProfileOutputPath(String profileOutputPath) {
-      this.profileOutputPath = Objects.requireNonNull(profileOutputPath);
-      return this;
-    }
-
-    /**
-     * Sets the path to the file where the result of this crawl should be written.
-     *
-     * <p>See {@link #getResultPath()}.
-     */
-    public Builder setResultPath(String resultPath) {
-      this.resultPath = Objects.requireNonNull(resultPath);
-      return this;
-    }
-
-    /**
-     * Constructs a {@link CrawlerConfiguration} from this builder.
-     */
-    public CrawlerConfiguration build() {
-      if (maxDepth < 0) {
-        throw new IllegalArgumentException("maxDepth cannot be negative");
-      }
-      if (timeoutSeconds <= 0) {
-        throw new IllegalArgumentException("timeoutSeconds must be positive");
-      }
-      if (popularWordCount < 0) {
-        throw new IllegalArgumentException("popularWordCount cannot be negative");
+      @JsonProperty("startPages")
+      public Builder addStartPages(String... startPages) {
+          for (String startPage : startPages) {
+              this.startPages.add(Objects.requireNonNull(startPage));
+          }
+          return this;
       }
 
-      return new CrawlerConfiguration(
-          startPages.stream().collect(Collectors.toUnmodifiableList()),
-          ignoredUrls.stream().map(Pattern::compile).collect(Collectors.toUnmodifiableList()),
-          ignoredWords.stream().map(Pattern::compile).collect(Collectors.toUnmodifiableList()),
-          parallelism,
-          implementationOverride,
-          maxDepth,
-          Duration.ofSeconds(timeoutSeconds),
-          popularWordCount,
-          profileOutputPath,
-          resultPath);
-    }
+      @JsonProperty("ignoredUrls")
+      public Builder addIgnoredUrls(String... patterns) {
+          for (String pattern : patterns) {
+              ignoredUrls.add(Objects.requireNonNull(pattern));
+          }
+          return this;
+      }
+
+      @JsonProperty("ignoredWords")
+      public Builder addIgnoredWords(String... patterns) {
+          for (String pattern : patterns) {
+              ignoredWords.add(Objects.requireNonNull(pattern));
+          }
+          return this;
+      }
+
+      @JsonProperty("parallelism")
+      public Builder setParallelism(int parallelism) {
+          this.parallelism = parallelism;
+          return this;
+      }
+
+      @JsonProperty("implementationOverride")
+      public Builder setImplementationOverride(String implementationOverride) {
+          this.implementationOverride = Objects.requireNonNull(implementationOverride);
+          return this;
+      }
+
+      @JsonProperty("maxDepth")
+      public Builder setMaxDepth(int maxDepth) {
+          this.maxDepth = maxDepth;
+          return this;
+      }
+
+      @JsonProperty("timeoutSeconds")
+      public Builder setTimeoutSeconds(int seconds) {
+          this.timeoutSeconds = seconds;
+          return this;
+      }
+
+      @JsonProperty("popularWordCount")
+      public Builder setPopularWordCount(int popularWordCount) {
+          this.popularWordCount = popularWordCount;
+          return this;
+      }
+
+      @JsonProperty("profileOutputPath")
+      public Builder setProfileOutputPath(String profileOutputPath) {
+          this.profileOutputPath = Objects.requireNonNull(profileOutputPath);
+          return this;
+      }
+
+      @JsonProperty("resultPath")
+      public Builder setResultPath(String resultPath) {
+          this.resultPath = Objects.requireNonNull(resultPath);
+          return this;
+      }
+
+      public CrawlerConfiguration build() {
+          if (maxDepth < 0) {
+              throw new IllegalArgumentException("maxDepth cannot be negative");
+          }
+          if (timeoutSeconds <= 0) {
+              throw new IllegalArgumentException("timeoutSeconds must be positive");
+          }
+          if (popularWordCount < 0) {
+              throw new IllegalArgumentException("popularWordCount cannot be negative");
+          }
+
+          return new CrawlerConfiguration(
+                  startPages.stream().collect(Collectors.toUnmodifiableList()),
+                  ignoredUrls.stream().map(Pattern::compile).collect(Collectors.toUnmodifiableList()),
+                  ignoredWords.stream().map(Pattern::compile).collect(Collectors.toUnmodifiableList()),
+                  parallelism,
+                  implementationOverride,
+                  maxDepth,
+                  Duration.ofSeconds(timeoutSeconds),
+                  popularWordCount,
+                  profileOutputPath,
+                  resultPath);
+      }
   }
+
 }
