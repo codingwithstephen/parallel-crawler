@@ -45,6 +45,7 @@ public final class WebCrawlerMain {
             try (Writer stdWriterResultPath = new OutputStreamWriter(System.out)) {
                 logger.info("Writing crawl result to standard output");
                 resultWriter.write(stdWriterResultPath);
+                stdWriterResultPath.close();
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Error writing crawl result to standard output", e);
             }
