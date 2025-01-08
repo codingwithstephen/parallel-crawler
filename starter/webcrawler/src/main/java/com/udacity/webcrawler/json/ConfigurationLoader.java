@@ -12,7 +12,7 @@ import java.util.Objects;
  * A static utility class that loads a JSON configuration file.
  */
 public final class ConfigurationLoader {
-
+  static ObjectMapper objectMapper = new ObjectMapper();
   private final Path path;
 
   /**
@@ -44,11 +44,17 @@ public final class ConfigurationLoader {
    * @param reader a Reader pointing to a JSON string that contains crawler configuration.
    * @return a crawler configuration
    */
-  public static CrawlerConfiguration read(Reader reader) throws IOException {
+  public static CrawlerConfiguration read(Reader reader) {
+    // This is here to get rid of the unused variable warning.
+//    Objects.requireNonNull(reader);
+    // TODO: Fill in this method
 
-    Objects.requireNonNull(reader, "Reader must not be null");
+    try {
+        return objectMapper.readValue(Objects.requireNonNull(reader), CrawlerConfiguration.Builder.class)
+                .build();
 
-    ObjectMapper objectMapper = new ObjectMapper();
-    return objectMapper.readValue(reader, CrawlerConfiguration.class);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

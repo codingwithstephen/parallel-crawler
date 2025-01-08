@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.time.Duration;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.udacity.webcrawler.json.ConfigurationLoader.objectMapper;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public final class ConfigurationLoaderTest {
@@ -28,7 +29,9 @@ public final class ConfigurationLoaderTest {
         " }";
 
     Reader reader = new StringReader(json);
+    objectMapper.disable(com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE);
     CrawlerConfiguration config = ConfigurationLoader.read(reader);
+
     try {
       assertThat(reader.ready()).isTrue();
     } catch (IOException e) {
