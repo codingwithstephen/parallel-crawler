@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -18,7 +19,8 @@ public final class ConfigurationLoader {
    * Create a {@link ConfigurationLoader} that loads configuration from the given {@link Path}.
    */
   public ConfigurationLoader(Path path) {
-    this.path = Objects.requireNonNull(path);
+
+    this.path = Objects.requireNonNull(path, "Path must not be null");
   }
 
   /**
@@ -27,9 +29,13 @@ public final class ConfigurationLoader {
    * @return the loaded {@link CrawlerConfiguration}.
    */
   public CrawlerConfiguration load() {
-    // TODO: Fill in this method.
-
-    return new CrawlerConfiguration.Builder().build();
+    System.out.println("path");
+    System.out.println(path);
+    try (Reader reader = Files.newBufferedReader(path)) {
+      return read(reader);
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to load configuration from path: " + path, e);
+    }
   }
 
   /**
@@ -39,10 +45,10 @@ public final class ConfigurationLoader {
    * @return a crawler configuration
    */
   public static CrawlerConfiguration read(Reader reader) throws IOException {
+
     Objects.requireNonNull(reader, "Reader must not be null");
 
     ObjectMapper objectMapper = new ObjectMapper();
-
     return objectMapper.readValue(reader, CrawlerConfiguration.class);
   }
 }

@@ -56,8 +56,8 @@ public final class CrawlResultWriter {
    */
   public void write(Writer writer) throws IOException {
     Objects.requireNonNull(writer, "Writer cannot be null");
+
     OBJECT_MAPPER.writeValue(writer, result);
-    writer.write(System.lineSeparator());
-    writer.flush();
+
   }
 }

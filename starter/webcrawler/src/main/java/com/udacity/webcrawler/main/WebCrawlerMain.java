@@ -1,5 +1,6 @@
 package com.udacity.webcrawler.main;
 
+import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.google.inject.Guice;
 import com.udacity.webcrawler.WebCrawler;
 import com.udacity.webcrawler.WebCrawlerModule;
@@ -11,82 +12,58 @@ import com.udacity.webcrawler.profiler.Profiler;
 import com.udacity.webcrawler.profiler.ProfilerModule;
 
 import javax.inject.Inject;
-import java.io.*;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class WebCrawlerMain {
 
-  private final CrawlerConfiguration config;
+    private static final Logger logger = Logger.getLogger(WebCrawlerMain.class.getName());
 
-  private WebCrawlerMain(CrawlerConfiguration config) {
-    this.config = Objects.requireNonNull(config);
-  }
+    private final CrawlerConfiguration config;
 
-  @Inject
-  private WebCrawler crawler;
-
-  @Inject
-  private Profiler profiler;
-
-  private void run() throws Exception {
-    Guice.createInjector(new WebCrawlerModule(config), new ProfilerModule()).injectMembers(this);
-
-    CrawlResult result = crawler.crawl(config.getStartPages());
-    CrawlResultWriter resultWriter = new CrawlResultWriter(result);
-
-    writeCrawlResults(resultWriter);
-
-    writeProfilerData();
-  }
-
-
-  private void writeCrawlResults(CrawlResultWriter resultWriter) {
-    String resultPath = config.getResultPath();
-    if (resultPath == null || resultPath.isEmpty()) {
-      try (Writer writer = new java.io.OutputStreamWriter(System.out)) {
-        resultWriter.write(writer);
-        writer.flush();
-      } catch (IOException e) {
-        System.err.println("Error writing crawl results to System.out: " + e.getMessage());
-      }
-    } else {
-      try (FileWriter writer = new FileWriter(resultPath)) {
-        resultWriter.write(writer);
-        System.out.println("Crawl results written to " + resultPath);
-      } catch (IOException e) {
-        System.err.println("Error writing crawl results to file '" + resultPath + "': " + e.getMessage());
-      }
-    }
-  }
-
-
-  private void writeProfilerData() {
-    String profilePath = config.getProfileOutputPath();
-    if (profilePath == null || profilePath.isEmpty()) {
-      try (Writer writer = new java.io.OutputStreamWriter(System.out)) {
-        profiler.writeData(writer);
-        writer.flush();
-      } catch (IOException e) {
-        System.err.println("Error writing profiler data to System.out: " + e.getMessage());
-      }
-    } else {
-      try (FileWriter writer = new FileWriter(profilePath, true)) {
-        profiler.writeData(writer);
-        System.out.println("Profiler data written to " + profilePath);
-      } catch (IOException e) {
-        System.err.println("Error writing profiler data to file '" + profilePath + "': " + e.getMessage());
-      }
-    }
-  }
-
-  public static void main(String[] args) throws Exception {
-    if (args.length != 1) {
-      System.out.println("Usage: WebCrawlerMain [starting-url]");
-      return;
+    private WebCrawlerMain(CrawlerConfiguration config) {
+        this.config = Objects.requireNonNull(config);
     }
 
-    CrawlerConfiguration config = new ConfigurationLoader(Path.of(args[0])).load();
-    new WebCrawlerMain(config).run();
-  }
+    @Inject
+    private WebCrawler crawler;
+
+    @Inject
+    private Profiler profiler;
+
+    private void run() throws StreamWriteException {
+        Guice.createInjector(new WebCrawlerModule(config), new ProfilerModule()).injectMembers(this);
+
+        try {
+            CrawlResult result = crawler.crawl(config.getStartPages());
+            CrawlResultWriter resultWriter = new CrawlResultWriter(result);
+
+            try (Writer stdWriterResultPath = new OutputStreamWriter(System.out)) {
+                logger.info("Writing crawl result to standard output");
+                resultWriter.write(stdWriterResultPath);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error writing crawl result to standard output", e);
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error during crawling process", e);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            System.out.println("Usage: WebCrawlerMain [starting-url]");
+            return;
+        }
+
+        try {
+            CrawlerConfiguration config = new ConfigurationLoader(Path.of(args[0])).load();
+            new WebCrawlerMain(config).run();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error loading configuration or running the crawler", e);
+        }
+    }
 }

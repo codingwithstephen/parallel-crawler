@@ -11,9 +11,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
+
+import static java.util.concurrent.ForkJoinTask.invokeAll;
 
 /**
  * A concrete implementation of {@link WebCrawler} that runs multiple threads on a
@@ -25,12 +26,15 @@ final class ParallelWebCrawler implements WebCrawler {
   private final int popularWordCount;
   private final ForkJoinPool pool;
 
+  private final Set<String> urlsVisited = new ConcurrentSkipListSet<>();
+  private final Map<String, Integer> wordCounts = new ConcurrentHashMap<>();
+
   @Inject
   ParallelWebCrawler(
-      Clock clock,
-      @Timeout Duration timeout,
-      @PopularWordCount int popularWordCount,
-      @TargetParallelism int threadCount) {
+          Clock clock,
+          @Timeout Duration timeout,
+          @PopularWordCount int popularWordCount,
+          @TargetParallelism int threadCount) {
     this.clock = clock;
     this.timeout = timeout;
     this.popularWordCount = popularWordCount;
@@ -39,11 +43,67 @@ final class ParallelWebCrawler implements WebCrawler {
 
   @Override
   public CrawlResult crawl(List<String> startingUrls) {
-    return new CrawlResult.Builder().build();
+    List<RecursiveTask<Void>> tasks = startingUrls.stream()
+            .map(CrawlTask::new)
+            .collect(Collectors.toList());
+
+    tasks.forEach(pool::invoke);
+
+    return new CrawlResult.Builder()
+            .setUrlsVisited(urlsVisited.size())
+            .setWordCounts(wordCounts)
+            .build();
   }
 
   @Override
   public int getMaxParallelism() {
     return Runtime.getRuntime().availableProcessors();
+  }
+
+  private class CrawlTask extends RecursiveTask<Void> {
+
+    private final String url;
+
+    CrawlTask(String url) {
+      this.url = url;
+    }
+
+    @Override
+    protected Void compute() {
+      if (!urlsVisited.add(url)) {
+        return null;
+      }
+
+      try {
+        List<String> linkedUrls = crawlUrl(url);
+        countWords(url);
+
+        List<CrawlTask> subtasks = linkedUrls.stream()
+                .map(CrawlTask::new)
+                .collect(Collectors.toList());
+
+        invokeAll((ForkJoinTask<?>) subtasks);
+
+      } catch (Exception e) {
+      }
+      return null;
+    }
+
+    private void countWords(String url) {
+      String content = getPageContent(url);
+      String[] words = content.split("\\W+");
+
+      for (String word : words) {
+        wordCounts.merge(word, 1, Integer::sum);
+      }
+    }
+
+    private String getPageContent(String url) {
+      return "sample content from " + url;
+    }
+
+    private List<String> crawlUrl(String url) {
+      return List.of("linked_url_1", "linked_url_2", "linked_url_3");
+    }
   }
 }
