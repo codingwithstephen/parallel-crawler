@@ -20,10 +20,10 @@ public final class CrawlResultWriterTest {
     counts.put("bar", 1);
     counts.put("foobar", 98);
     CrawlResult result =
-            new CrawlResult.Builder()
-                    .setUrlsVisited(17)
-                    .setWordCounts(counts)
-                    .build();
+        new CrawlResult.Builder()
+            .setUrlsVisited(17)
+            .setWordCounts(counts)
+            .build();
 
     CrawlResultWriter resultWriter = new CrawlResultWriter(result);
     CloseableStringWriter stringWriter = new CloseableStringWriter();
@@ -31,21 +31,21 @@ public final class CrawlResultWriterTest {
     objectMapper.disable(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     resultWriter.write(stringWriter);
     assertWithMessage("Streams should usually be closed in the same scope where they were created")
-            .that(stringWriter.isClosed())
-            .isFalse();
+        .that(stringWriter.isClosed())
+        .isFalse();
     String written = stringWriter.toString();
 
     // The purpose of all the wildcard matchers (".*") is to make sure we allow the JSON output to
     // contain extra whitespace where it does not matter.
     Pattern expected =
-            Pattern.compile(".*\\{" +
-                    ".*\"wordCounts\".*:.*\\{" +
-                    ".*\"foo\".*:12.*," +
-                    ".*\"bar\".*:.*1," +
-                    ".*\"foobar\".*:.*98" +
-                    ".*}.*,.*" +
-                    ".*\"urlsVisited\".*:.*17" +
-                    ".*}.*", Pattern.DOTALL);
+        Pattern.compile(".*\\{" +
+            ".*\"wordCounts\".*:.*\\{" +
+            ".*\"foo\".*:12.*," +
+            ".*\"bar\".*:.*1," +
+            ".*\"foobar\".*:.*98" +
+            ".*}.*,.*" +
+            ".*\"urlsVisited\".*:.*17" +
+            ".*}.*", Pattern.DOTALL);
 
     assertThat(written).matches(expected);
   }

@@ -12,15 +12,16 @@ import java.util.Objects;
  * A static utility class that loads a JSON configuration file.
  */
 public final class ConfigurationLoader {
-  static ObjectMapper objectMapper = new ObjectMapper();
+
   private final Path path;
+  static ObjectMapper objectMapper = new ObjectMapper();
 
   /**
    * Create a {@link ConfigurationLoader} that loads configuration from the given {@link Path}.
    */
   public ConfigurationLoader(Path path) {
 
-    this.path = Objects.requireNonNull(path, "Path must not be null");
+    this.path = Objects.requireNonNull(path);
   }
 
   /**
@@ -28,13 +29,15 @@ public final class ConfigurationLoader {
    *
    * @return the loaded {@link CrawlerConfiguration}.
    */
-  public CrawlerConfiguration load() {
-    System.out.println("path");
-    System.out.println(path);
-    try (Reader reader = Files.newBufferedReader(path)) {
+  public CrawlerConfiguration load() throws IOException {
+    // TODO: Fill in this method.
+    // Try with resources will automatically close the reader file
+    // after executing the Try block
+    try (Reader reader = Files.newBufferedReader(path)){
       return read(reader);
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to load configuration from path: " + path, e);
+    } catch (Exception ex) {
+      ex.getLocalizedMessage();
+      return null;
     }
   }
 
@@ -49,12 +52,12 @@ public final class ConfigurationLoader {
 //    Objects.requireNonNull(reader);
     // TODO: Fill in this method
 
-    try {
-        return objectMapper.readValue(Objects.requireNonNull(reader), CrawlerConfiguration.Builder.class)
-                .build();
+   try {
+       return objectMapper.readValue(Objects.requireNonNull(reader), CrawlerConfiguration.Builder.class)
+       .build();
 
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+   } catch (IOException e) {
+     throw new RuntimeException(e);
     }
   }
 }
