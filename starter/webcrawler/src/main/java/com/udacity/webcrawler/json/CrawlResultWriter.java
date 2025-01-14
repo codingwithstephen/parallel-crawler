@@ -20,7 +20,6 @@ public final class CrawlResultWriter {
    * Creates a new {@link CrawlResultWriter} that will write the given {@link CrawlResult}.
    */
   public CrawlResultWriter(CrawlResult result) {
-    objectMapper.disable(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET);
     this.result = Objects.requireNonNull(result);
   }
 
@@ -36,8 +35,8 @@ public final class CrawlResultWriter {
     // This is here to get rid of the unused variable warning.
 //    Objects.requireNonNull(path);
     // TODO: Fill in this method.
-    try (FileWriter fileWriter =
-                 new FileWriter(Objects.requireNonNull(path).toFile(), true)){
+
+    try (FileWriter fileWriter = new FileWriter(Objects.requireNonNull(path).toFile(), true)){
       write(fileWriter);
     }
     catch (IOException ex) {
@@ -52,9 +51,10 @@ public final class CrawlResultWriter {
    * @param writer the destination where the crawl result data should be written.
    */
   public void write(Writer writer) {
-    // This is here to get rid of the unused variable warning.
-//    Objects.requireNonNull(writer);
+
     // TODO: Fill in this method.
+
+    objectMapper.disable(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
     try {
       objectMapper.writeValue(Objects.requireNonNull(writer), result);

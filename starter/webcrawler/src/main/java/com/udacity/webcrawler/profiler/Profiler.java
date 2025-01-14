@@ -3,6 +3,7 @@ package com.udacity.webcrawler.profiler;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A utility that wraps an object that should be performance profiled.
@@ -35,13 +36,19 @@ public interface Profiler {
    * @param path the destination where the formatted data should be written.
    * @throws IOException if there was a problem writing the data to file.
    */
-  void writeData(Path path) throws IOException;
+  /**
+   * Writes the profile data to the given {@link Path} asynchronously.
+   *
+   * @param path the file path where the formatted data should be written.
+   * @return a {@link CompletableFuture} that completes when the writing is finished.
+   */
+  CompletableFuture<Void> writeDataAsync(Path path);
 
   /**
-   * Formats the profile data as a string and writes it to the given {@link Writer}.
+   * Formats the profile data as a string and writes it to the given {@link Writer} asynchronously.
    *
    * @param writer the destination where the formatted data should be written.
-   * @throws IOException if there was a problem writing the data.
+   * @return a {@link CompletableFuture} that completes when the writing is finished.
    */
-  void writeData(Writer writer) throws IOException;
+  CompletableFuture<Void> writeDataAsync(Writer writer);
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,16 +44,18 @@ final class ProfilingState {
    * this {@code write()} method for {@code M()} should be 3 seconds.
    */
   void write(Writer writer) throws IOException {
-    List<String> entries =
-        data.entrySet()
-            .stream()
-            .sorted(Map.Entry.comparingByKey())
-            .map(e -> e.getKey() + " took " + formatDuration(e.getValue()) + System.lineSeparator())
-            .collect(Collectors.toList());
 
-    // We have to use a for-loop here instead of a Stream API method because Writer#write() can
-    // throw an IOException, and lambdas are not allowed to throw checked exceptions.
-    for (String entry : entries) {
+      List<Map.Entry<String, Duration>> toSort = new ArrayList<>();
+      toSort.addAll(data.entrySet());
+      toSort.sort(Map.Entry.comparingByKey());
+      List<String> entries =
+              new ArrayList<>();
+      for (Map.Entry<String, Duration> e : toSort) {
+          String s = e.getKey() + " took " + formatDuration(e.getValue()) + System.lineSeparator();
+          entries.add(s);
+      }
+
+      for (String entry : entries) {
       writer.write(entry);
     }
   }

@@ -53,8 +53,10 @@ public final class ConfigurationLoader {
     // TODO: Fill in this method
 
    try {
-       return objectMapper.readValue(Objects.requireNonNull(reader), CrawlerConfiguration.Builder.class)
-       .build();
+     CrawlerConfiguration crawlerConfiguration =
+             objectMapper.readValue(Objects.requireNonNull(reader), CrawlerConfiguration.Builder.class)
+             .build();
+     return crawlerConfiguration;
 
    } catch (IOException e) {
      throw new RuntimeException(e);

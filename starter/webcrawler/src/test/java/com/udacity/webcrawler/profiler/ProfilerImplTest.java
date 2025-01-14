@@ -9,6 +9,7 @@ import java.util.Objects;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public final class ProfilerImplTest {
@@ -78,64 +79,85 @@ public final class ProfilerImplTest {
   public void testBasicProfiling() throws Exception {
     ProfiledInterface proxy = profiler.wrap(ProfiledInterface.class, delegate);
 
+
     Instant beforeInvocation = clock.instant();
 
+
     assertWithMessage("The intercepted method did not forward the return value correctly")
-        .that(proxy.profiled())
-        .isEqualTo("profiled");
+            .that(proxy.profiled())
+            .isEqualTo("profiled");
+
+
     Instant afterInvocation = clock.instant();
     assertWithMessage("Expected time to advance from invocation.")
-        .that(beforeInvocation)
-        .isLessThan(afterInvocation);
+            .that(beforeInvocation)
+            .isLessThan(afterInvocation);
 
-    // Run the method again a few more times to aggregate some data.
     proxy.profiled();
     proxy.profiled();
 
     CloseableStringWriter writer = new CloseableStringWriter();
-    profiler.writeData(writer);
-    assertWithMessage("Streams should usually be closed in the same scope where they were created")
-        .that(writer.isClosed())
-        .isFalse();
-    String written = writer.toString();
-    assertWithMessage("The profile data was not written or is incorrect")
-        .that(written)
-        .contains(
-            "com.udacity.webcrawler.profiler.ProfilerImplTest$ProfiledInterfaceImpl#profiled");
-    assertThat(written).contains("0m 3s 0ms");
-  }
 
+    profiler.writeDataAsync(writer)
+            .thenAccept(unused -> {
+              assertWithMessage("Streams should usually be closed in the same scope where they were created")
+                      .that(writer.isClosed()).isFalse();
+
+              String written = writer.toString();
+              assertWithMessage("The profile data was not written or is incorrect")
+                      .that(written)
+                      .contains(
+                              "com.udacity.webcrawler.profiler.ProfilerImplTest$ProfiledInterfaceImpl#profiled");
+              assertThat(written).contains("0m 3s 0ms");
+            })
+            .exceptionally(ex -> {
+              fail("Asynchronous write failed unexpectedly: " + ex.getMessage());
+              return null;
+            })
+            .join();
+  }
   @Test
   public void testDeclaredExceptionHandling() throws Exception {
     ProfiledInterface proxy = profiler.wrap(ProfiledInterface.class, delegate);
 
     Instant beforeInvocation = clock.instant();
+
     Throwable expected = assertThrows(
-        Throwable.class,
-        () -> proxy.throwSomething(new Throwable("expected exception")),
-        "The method interceptor should forward exceptions thrown by the wrapped object");
+            Throwable.class,
+            () -> proxy.throwSomething(new Throwable("expected exception")),
+            "The method interceptor should forward exceptions thrown by the wrapped object"
+    );
     assertWithMessage("The proxy threw a different exception than was thrown by the wrapped object")
-        .that(expected)
-        .hasMessageThat()
-        .isEqualTo("expected exception");
+            .that(expected)
+            .hasMessageThat()
+            .isEqualTo("expected exception");
+
 
     Instant afterInvocation = clock.instant();
     assertWithMessage("Expected time to advance from invocation.")
-        .that(beforeInvocation)
-        .isLessThan(afterInvocation);
+            .that(beforeInvocation)
+            .isLessThan(afterInvocation);
 
     CloseableStringWriter writer = new CloseableStringWriter();
-    profiler.writeData(writer);
-    assertWithMessage("Streams should usually be closed in the same scope where they were created")
-        .that(writer.isClosed())
-        .isFalse();
-    String written = writer.toString();
-    assertWithMessage("Profile data should still be recorded if an exception was thrown.")
-        .that(written)
-        .contains("com.udacity.webcrawler.profiler.ProfilerImplTest$ProfiledInterfaceImpl");
-    assertThat(written).contains("0m 1s 0ms");
-  }
 
+
+    profiler.writeDataAsync(writer)
+            .thenAccept(unused -> {
+              assertWithMessage("Streams should usually be closed in the same scope where they were created")
+                      .that(writer.isClosed()).isFalse();
+
+              String written = writer.toString();
+              assertWithMessage("Profile data should still be recorded if an exception was thrown.")
+                      .that(written)
+                      .contains("com.udacity.webcrawler.profiler.ProfilerImplTest$ProfiledInterfaceImpl");
+              assertThat(written).contains("0m 1s 0ms");
+            })
+            .exceptionally(ex -> {
+              fail("Asynchronous write failed unexpectedly: " + ex.getMessage());
+              return null;
+            })
+            .join();
+  }
   /**
    * A test interface that does not have any {@link Profiled} methods.
    */

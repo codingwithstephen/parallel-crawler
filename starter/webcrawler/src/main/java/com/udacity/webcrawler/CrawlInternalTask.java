@@ -44,36 +44,32 @@ public final class CrawlInternalTask extends RecursiveTask<Boolean> {
 
     @Override
     protected Boolean compute() {
-
-        if (maxDepth == 0 || clock.instant().isAfter(deadline)) {
+        if (maxDepth <= 0 || clock.instant().isAfter(deadline)) {
             return false;
         }
 
-        for (Pattern pattern : ignoredUrls) {
-            if (pattern.matcher(url).matches()) {
+        if (ignoredUrls.stream().anyMatch(pattern -> pattern.matcher(url).matches())) {
+            return false;
+        }
+
+        synchronized (visitedUrls) {
+            if (!visitedUrls.add(url)) {
                 return false;
             }
         }
 
-        if (!visitedUrls.add(url)) {
-            return false;
-        }
-
         PageParser.Result result = parserFactory.get(url).parse();
-
-        result.getWordCounts().forEach((key, value) ->
-                counts.merge(key, value, Integer::sum)
+        result.getWordCounts().forEach((word, count) ->
+                counts.merge(word, count, Integer::sum)
         );
 
 
-        List<CrawlInternalTask> subtasks = new ArrayList<>();
-        for (String link : result.getLinks()) {
-            subtasks.add(new CrawlInternalTask(link, deadline, maxDepth - 1, counts,
-                    visitedUrls, clock, parserFactory, ignoredUrls));
-        }
+        List<CrawlInternalTask> subtasks = result.getLinks().stream()
+                .map(link -> new CrawlInternalTask(link, deadline, maxDepth - 1, counts,
+                        visitedUrls, clock, parserFactory, ignoredUrls))
+                .toList();
 
         invokeAll(subtasks);
-
         return true;
     }
 }

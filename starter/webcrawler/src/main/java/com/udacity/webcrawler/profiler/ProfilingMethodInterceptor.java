@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A method interceptor that checks whether {@link Method}s are annotated with the {@link Profiled}
@@ -34,32 +35,23 @@ final class ProfilingMethodInterceptor implements InvocationHandler {
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    // TODO: This method interceptor should inspect the called method to see if it is a profiled
-    //       method. For profiled methods, the interceptor should record the start time, then
-    //       invoke the method using the object that is being profiled. Finally, for profiled
-    //       methods, the interceptor should record how long the method call took, using the
-    //       ProfilingState methods.
 
-    Object invokedObject;
-    Instant startTime = null;
-    boolean isProfiled = method.getAnnotation(Profiled.class) != null;
-    if (isProfiled) {
-      startTime = clock.instant();
-    }
+    boolean isProfiled = method.isAnnotationPresent(Profiled.class);
+    Instant startTime = isProfiled ? clock.instant() : null;
+
     try {
-      invokedObject = method.invoke(this.delegate, args);
 
-    } catch (InvocationTargetException ex) {
-      throw ex.getTargetException();
-    } catch (IllegalAccessException ex) {
-      throw new RuntimeException(ex);
-
+      return method.invoke(delegate, args);
+    } catch (InvocationTargetException e) {
+      throw e.getTargetException();
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException("Method invocation failed due to illegal access", e);
     } finally {
-      if (isProfiled) {
-        Duration duration = Duration.between(startTime, clock.instant());
-        state.record(this.delegate.getClass(), method, duration);
-      }
+
+      Optional.ofNullable(startTime).ifPresent(start -> {
+        Duration duration = Duration.between(start, clock.instant());
+        state.record(delegate.getClass(), method, duration);
+      });
     }
-    return invokedObject;
   }
 }
